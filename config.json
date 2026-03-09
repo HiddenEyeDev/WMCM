@@ -1,0 +1,38 @@
+{
+  "servers": [
+    {
+      "id": "021076e9",
+      "name": "Server",
+      "path": "C:\\Users\\hidde\\Desktop\\minecraft-manager\\server",
+      "jar": "server.jar",
+      "java": "java",
+      "jvmArgs": "-Xmx2G -Xms1G"
+    }
+  ],
+  "activeServer": "021076e9",
+  "port": 3000,
+  "auth": {
+    "enabled": true,
+    "password": "test"
+  },
+  "discord": {
+    "enabled": false,
+    "webhook": ""
+  },
+  "backupDir": "C:\\Users\\hidde\\Desktop\\minecraft-manager\\backups",
+  "scheduledTasks": [
+    {
+      "id": "7df99db4",
+      "enabled": true,
+      "intervalMinutes": 1,
+      "name": "test",
+      "type": "command",
+      "command": "",
+      "warnMinutes": 1
+    }
+  ],
+  "serverPath": "C:\\Users\\hidde\\Desktop\\minecraft-manager\\server",
+  "javaPath": "java",
+  "jarFile": "server.jar",
+  "jvmArgs": "-Xmx2G -Xms1G"
+}

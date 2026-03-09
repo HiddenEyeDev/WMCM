@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>⛏ MC Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--bg0:#080a0d;--bg1:#0d1117;--bg2:#131920;--bg3:#1a2230;--border:#1e2d40;--green:#4ade80;--green-d:#166534;--red:#f87171;--red-d:#7f1d1d;--yellow:#fbbf24;--blue:#38bdf8;--purple:#a78bfa;--orange:#fb923c;--text:#e2e8f0;--dim:#64748b;--muted:#334155;--mc:#5dbb63;--glow:0 0 20px rgba(74,222,128,.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg0);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(74,222,128,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,.015) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* Login */
+#login-screen{position:fixed;inset:0;background:var(--bg0);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:40px;width:340px;text-align:center}
+.login-logo{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--mc);text-shadow:0 0 12px rgba(93,187,99,.6);margin-bottom:24px;line-height:1.8}
+.login-box input{width:100%;padding:10px 14px;margin:8px 0;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none}
+.login-box input:focus{border-color:var(--green)}
+
+/* Header */
+header{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--bg1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.logo{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--mc);text-shadow:0 0 12px rgba(93,187,99,.6);white-space:nowrap}
+
+/* Server switcher */
+.server-switcher{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;font-size:11px;cursor:pointer;position:relative}
+.server-switcher select{background:none;border:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;cursor:pointer;max-width:160px}
+
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);transition:all .3s;flex-shrink:0}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-label{font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+
+.header-btns{display:flex;gap:6px;margin-left:auto}
+
+/* Tabs */
+.tabs{display:flex;background:var(--bg1);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto}
+.tab{padding:10px 16px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;user-select:none;flex-shrink:0}
+.tab:hover{color:var(--text)}.tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* Main */
+main{flex:1;padding:16px 20px;max-width:1800px;width:100%;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;border:1px solid;border-radius:4px;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none}
+.btn-green{background:rgba(74,222,128,.1);border-color:var(--green);color:var(--green)}.btn-green:hover{background:rgba(74,222,128,.2);box-shadow:var(--glow)}
+.btn-red{background:rgba(248,113,113,.1);border-color:var(--red);color:var(--red)}.btn-red:hover{background:rgba(248,113,113,.2)}
+.btn-yellow{background:rgba(251,191,36,.1);border-color:var(--yellow);color:var(--yellow)}.btn-yellow:hover{background:rgba(251,191,36,.2)}
+.btn-blue{background:rgba(56,189,248,.1);border-color:var(--blue);color:var(--blue)}.btn-blue:hover{background:rgba(56,189,248,.2)}
+.btn-purple{background:rgba(167,139,250,.1);border-color:var(--purple);color:var(--purple)}.btn-purple:hover{background:rgba(167,139,250,.2)}
+.btn-dim{background:var(--bg2);border-color:var(--border);color:var(--dim)}.btn-dim:hover{color:var(--text);border-color:var(--dim)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-sm{padding:4px 10px;font-size:9px}
+
+/* Cards */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.card-header{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--dim)}
+.card-body{padding:14px}
+
+/* Stat cards */
+.stat-card{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.stat-label{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--dim)}
+.stat-value{font-size:20px;font-weight:700}.stat-value.green{color:var(--green)}.stat-value.red{color:var(--red)}
+.progress-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .5s ease}
+
+/* Grid helpers */
+.grid-5{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* Dashboard */
+.dash-main{display:grid;grid-template-columns:320px 1fr;gap:12px;margin-top:12px}
+.props-row td{padding:6px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:11px}
+.props-row td:first-child{color:var(--dim);font-size:9px;text-transform:uppercase;letter-spacing:1px;width:45%}
+.props-row:last-child td{border-bottom:none}
+
+/* Console */
+.console-wrap{display:flex;flex-direction:column;height:calc(100vh - 150px)}
+#console-output{flex:1;overflow-y:auto;padding:10px 14px;background:#050709;font-size:12px;line-height:1.75;border:1px solid var(--border);border-radius:6px 6px 0 0}
+#console-output::-webkit-scrollbar{width:5px}
+#console-output::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.log-line{padding:1px 0;word-break:break-all}
+.log-line.error{color:var(--red)}.log-line.system{color:var(--blue);font-style:italic}.log-line.command{color:var(--yellow)}
+.log-line .ts{color:var(--muted);font-size:10px;margin-right:8px}
+.log-line .warn{color:var(--yellow)}.log-line .info-t{color:var(--blue)}
+.log-line .joined{color:var(--green)}.log-line .left-t{color:var(--red)}
+.console-bar{display:flex;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow:hidden}
+.console-prompt{padding:9px 12px;background:var(--bg2);color:var(--green);font-size:14px;font-weight:700;border-right:1px solid var(--border);user-select:none}
+#cmd-input{flex:1;padding:9px 12px;background:var(--bg1);border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px}
+#cmd-send{padding:9px 18px;background:rgba(74,222,128,.1);border:none;border-left:1px solid var(--border);color:var(--green);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:background .15s}
+#cmd-send:hover{background:rgba(74,222,128,.2)}
+
+/* Players */
+.player-card{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:8px}
+.player-avatar{width:32px;height:32px;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.player-name{font-size:13px;font-weight:500;flex:1}
+.player-time{font-size:10px;color:var(--dim)}
+.player-actions{display:flex;gap:5px}
+.wl-item,.ban-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;margin-bottom:6px;font-size:12px}
+
+/* Files */
+.file-layout{display:grid;grid-template-columns:260px 1fr;gap:10px;height:calc(100vh - 150px)}
+.file-tree{background:var(--bg1);border:1px solid var(--border);border-radius:6px;overflow-y:auto;display:flex;flex-direction:column}
+.breadcrumb{padding:6px 10px;font-size:10px;color:var(--dim);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:3px}
+.breadcrumb span{cursor:pointer}.breadcrumb span:hover{color:var(--text)}.bc-sep{color:var(--muted)}
+.file-items{flex:1;overflow-y:auto;padding:6px}
+.file-item{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:4px;cursor:pointer;transition:background .1s;font-size:11px}
+.file-item:hover{background:var(--bg3)}.file-item.selected{background:rgba(74,222,128,.1);color:var(--green)}
+.file-item .icon{font-size:13px;width:15px;text-align:center;flex-shrink:0}
+.file-item .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .fsize{font-size:9px;color:var(--muted)}
+.editor-pane{display:flex;flex-direction:column;background:var(--bg1);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.editor-toolbar{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.editor-filename{font-size:11px;flex:1}.editor-filename.unsaved::after{content:' ●';color:var(--yellow)}
+#file-editor{flex:1;padding:14px;background:#050709;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;border:none;outline:none;resize:none;tab-size:2}
+
+/* Plugins */
+.plugin-drop{border:2px dashed var(--border);border-radius:6px;padding:18px;text-align:center;color:var(--dim);font-size:11px;cursor:pointer;transition:all .2s;margin-bottom:12px}
+.plugin-drop:hover,.plugin-drop.drag-over{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.04)}
+.plugin-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:7px}
+.plugin-item.disabled{opacity:.5}
+.plugin-meta{flex:1}.plugin-name{font-size:12px;font-weight:500}.plugin-sub{font-size:10px;color:var(--dim);margin-top:2px}
+
+/* Backups */
+.backup-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:7px}
+.backup-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.backup-meta{font-size:10px;color:var(--dim);white-space:nowrap}
+
+/* Scheduler */
+.task-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:7px}
+.task-item.disabled{opacity:.5}
+.task-name{flex:1;font-size:12px}.task-meta{font-size:10px;color:var(--dim)}
+
+/* Toggle */
+.toggle{position:relative;width:34px;height:18px;display:inline-block;flex-shrink:0}
+.toggle input{display:none}
+.toggle-slider{position:absolute;inset:0;border-radius:9px;background:var(--bg3);cursor:pointer;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:var(--dim);left:3px;top:3px;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--green-d)}
+.toggle input:checked+.toggle-slider::before{background:var(--green);transform:translateX(16px)}
+
+/* Forms */
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.form-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim)}
+.form-input{padding:8px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;width:100%}
+.form-input:focus{border-color:var(--green)}
+.form-select{padding:8px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;width:100%}
+.form-hint{font-size:10px;color:var(--muted)}
+
+/* Chart */
+.chart-wrap{position:relative;height:180px;background:#050709;border-radius:4px;padding:8px}
+
+/* Player chips */
+.player-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;margin:2px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;font-size:10px}
+.player-chip::before{content:'●';color:var(--green);font-size:7px}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:340px;max-width:500px;width:90%}
+.modal h3{font-size:13px;margin-bottom:16px;color:var(--text)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;padding:9px 14px;background:var(--bg2);border:1px solid var(--green);border-radius:4px;color:var(--green);font-size:11px;z-index:9999;animation:slideIn .2s ease,fadeOut .3s ease 2.7s forwards}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.warn{border-color:var(--yellow);color:var(--yellow)}
+@keyframes slideIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(8px)}}
+
+.mini-console{padding:8px 12px;background:#050709;font-size:11px;line-height:1.8;height:220px;overflow-y:auto;font-family:'JetBrains Mono',monospace}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:1px}
+.badge-green{background:rgba(74,222,128,.15);color:var(--green)}
+.badge-red{background:rgba(248,113,113,.15);color:var(--red)}
+.badge-yellow{background:rgba(251,191,36,.15);color:var(--yellow)}
+.badge-blue{background:rgba(56,189,248,.15);color:var(--blue)}
+.sep-line{border:none;border-top:1px solid var(--border);margin:12px 0}
+.section-title{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">⛏<br/>MC Manager</div>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:16px">Password required</p>
+    <input id="login-pw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn btn-green" style="width:100%;margin-top:8px;justify-content:center" onclick="doLogin()">Login</button>
+    <p id="login-err" style="color:var(--red);font-size:10px;margin-top:8px;display:none">Wrong password</p>
+  </div>
+</div>
+
+<header>
+  <div class="logo">⛏ MC</div>
+  <div class="server-switcher">
+    <span style="color:var(--dim);font-size:10px">SERVER</span>
+    <select id="server-select" onchange="switchServer(this.value)"></select>
+  </div>
+  <button class="btn btn-dim btn-sm" onclick="openServerModal()">+ Add</button>
+  <div style="display:flex;align-items:center;gap:7px;margin-left:8px">
+    <div class="status-dot" id="status-dot"></div>
+    <span class="status-label" id="status-label">Offline</span>
+  </div>
+  <div class="header-btns">
+    <button class="btn btn-green" id="btn-start" onclick="startServer()">▶ Start</button>
+    <button class="btn btn-red"   id="btn-stop"    onclick="stopServer()"    disabled>■ Stop</button>
+    <button class="btn btn-yellow" id="btn-restart" onclick="restartServer()" disabled>↺ Restart</button>
+  </div>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="switchTab('dashboard',this)">Dashboard</div>
+  <div class="tab" onclick="switchTab('console',this)">Console</div>
+  <div class="tab" onclick="switchTab('players',this)">Players</div>
+  <div class="tab" onclick="switchTab('files',this)">Files</div>
+  <div class="tab" onclick="switchTab('plugins',this)">Plugins</div>
+  <div class="tab" onclick="switchTab('backups',this)">Backups</div>
+  <div class="tab" onclick="switchTab('scheduler',this)">Scheduler</div>
+  <div class="tab" onclick="switchTab('monitor',this)">Monitor</div>
+  <div class="tab" onclick="switchTab('settings',this)">Settings</div>
+</div>
+
+<main>
+
+<!-- DASHBOARD -->
+<div class="panel active" id="panel-dashboard">
+  <div class="grid-5" style="margin-bottom:10px">
+    <div class="stat-card"><div class="stat-label">Status</div><div class="stat-value" id="dash-status" style="font-size:15px">OFFLINE</div></div>
+    <div class="stat-card"><div class="stat-label">RAM</div><div class="stat-value" id="dash-ram" style="font-size:13px">—</div><div class="progress-bar"><div class="progress-fill" id="ram-bar" style="width:0%"></div></div></div>
+    <div class="stat-card"><div class="stat-label">CPU Load</div><div class="stat-value" id="dash-cpu">—</div></div>
+    <div class="stat-card"><div class="stat-label">Disk Usage</div><div class="stat-value" id="dash-disk" style="font-size:13px">—</div></div>
+    <div class="stat-card"><div class="stat-label">Players</div><div class="stat-value" id="dash-playercount">0</div></div>
+    <div class="stat-card"><div class="stat-label">Plugins</div><div class="stat-value" id="dash-plugins">—</div></div>
+  </div>
+  <div class="dash-main">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card">
+        <div class="card-header">Server Properties <button class="btn btn-dim btn-sm" onclick="refreshServerInfo()">↺</button></div>
+        <table style="width:100%;border-collapse:collapse"><tbody id="props-tbody"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-header">Online Players</div>
+        <div id="dash-players" style="padding:10px 12px;font-size:11px;color:var(--dim)">Server offline</div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-header">Live Console</div>
+      <div class="mini-console" id="mini-console" style="flex:1"></div>
+      <div style="display:flex;border-top:1px solid var(--border)">
+        <input id="dash-cmd" type="text" placeholder="Quick command…" style="flex:1;padding:7px 10px;background:var(--bg1);border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px" onkeydown="if(event.key==='Enter')dashCmd()"/>
+        <button onclick="dashCmd()" style="padding:7px 14px;background:rgba(74,222,128,.1);border:none;border-left:1px solid var(--border);color:var(--green);cursor:pointer;font-size:10px;font-family:'JetBrains Mono',monospace">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONSOLE -->
+<div class="panel" id="panel-console" style="display:none;flex-direction:column;height:calc(100vh - 150px)">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <span class="section-title" style="margin:0">Server Console</span>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <select id="log-filter" onchange="filterLogs()" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 8px;outline:none">
+        <option value="all">All</option><option value="error">Errors</option><option value="warn">Warnings</option><option value="system">System</option>
+      </select>
+      <input id="console-search" type="text" placeholder="Search…" style="padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;width:160px" oninput="filterLogs()"/>
+      <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--dim)"><input type="checkbox" id="auto-scroll" checked style="accent-color:var(--green)"/> Auto-scroll</label>
+      <button class="btn btn-dim btn-sm" onclick="saveConsoleLog()">💾 Save</button>
+      <button class="btn btn-dim btn-sm" onclick="clearConsole()">Clear</button>
+    </div>
+  </div>
+  <div id="console-output" class="console-wrap" style="flex:1"></div>
+  <div class="console-bar">
+    <div class="console-prompt">$</div>
+    <input id="cmd-input" type="text" placeholder="Enter server command…" autocomplete="off"/>
+    <button id="cmd-send" onclick="sendCommand()">Send</button>
+  </div>
+</div>
+
+<!-- PLAYERS -->
+<div class="panel" id="panel-players" style="display:none">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+    <!-- Online -->
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="section-title" style="margin:0">Online Players</span>
+        <span id="online-count" class="badge badge-green">0</span>
+        <button class="btn btn-dim btn-sm" style="margin-left:auto" onclick="sendCommand('list')">↺ Refresh</button>
+      </div>
+      <div id="player-list">
+        <p style="color:var(--dim);font-size:12px;padding:10px 0">No players online</p>
+      </div>
+      <hr class="sep-line"/>
+      <div class="section-title">Add to Whitelist</div>
+      <div style="display:flex;gap:6px">
+        <input id="wl-add-name" class="form-input" type="text" placeholder="Username" style="flex:1"/>
+        <button class="btn btn-green" onclick="wlAdd()">Add</button>
+      </div>
+    </div>
+    <!-- Whitelist -->
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="section-title" style="margin:0">Whitelist</span>
+        <button class="btn btn-dim btn-sm" style="margin-left:auto" onclick="loadWhitelist()">↺</button>
+      </div>
+      <div id="whitelist-list"><p style="color:var(--dim);font-size:11px">Loading…</p></div>
+    </div>
+    <!-- Bans -->
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="section-title" style="margin:0">Banned Players</span>
+        <button class="btn btn-dim btn-sm" style="margin-left:auto" onclick="loadBanlist()">↺</button>
+      </div>
+      <div id="banlist-list"><p style="color:var(--dim);font-size:11px">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- FILES -->
+<div class="panel" id="panel-files" style="display:none">
+  <div class="file-layout">
+    <div class="file-tree">
+      <div class="breadcrumb" id="breadcrumb"><span onclick="navigateTo('')">root</span></div>
+      <div class="file-items" id="file-tree"></div>
+    </div>
+    <div class="editor-pane">
+      <div class="editor-toolbar" id="editor-toolbar" style="display:none">
+        <span class="editor-filename" id="editor-filename"></span>
+        <button class="btn btn-green btn-sm" onclick="saveFile()">💾 Save</button>
+        <button class="btn btn-dim btn-sm" onclick="closeEditor()">✕</button>
+      </div>
+      <div id="editor-placeholder" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Select a file to edit</div>
+      <textarea id="file-editor" style="display:none;flex:1" class="" onkeydown="editorKeydown(event)" oninput="markUnsaved()"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- PLUGINS -->
+<div class="panel" id="panel-plugins" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <span class="section-title" style="margin:0">Installed Plugins</span>
+    <span id="plugin-count" class="badge badge-blue">0</span>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="btn btn-blue" onclick="document.getElementById('plugin-upload').click()">⬆ Upload</button>
+      <input type="file" id="plugin-upload" accept=".jar" style="display:none" onchange="uploadPlugin(this)"/>
+      <button class="btn btn-dim" onclick="loadPlugins()">↺ Refresh</button>
+    </div>
+  </div>
+  <div class="plugin-drop" id="plugin-drop" onclick="document.getElementById('plugin-upload').click()">Drop .jar files here or click to upload</div>
+  <div id="plugin-grid"></div>
+</div>
+
+<!-- BACKUPS -->
+<div class="panel" id="panel-backups" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span class="section-title" style="margin:0">World Backups</span>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="btn btn-green" onclick="createBackup()" id="backup-btn">📦 Backup Now</button>
+      <button class="btn btn-dim" onclick="loadBackups()">↺ Refresh</button>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-body" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="margin:0;flex:1;min-width:200px">
+        <label class="form-label">Backup Directory</label>
+        <input id="backup-dir" class="form-input" type="text" placeholder="./backups"/>
+      </div>
+      <button class="btn btn-dim" onclick="saveBackupDir()" style="align-self:flex-end">Save Path</button>
+    </div>
+  </div>
+  <div id="backup-list"><p style="color:var(--dim);font-size:12px">No backups found</p></div>
+</div>
+
+<!-- SCHEDULER -->
+<div class="panel" id="panel-scheduler" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span class="section-title" style="margin:0">Scheduled Tasks</span>
+    <button class="btn btn-green" style="margin-left:auto" onclick="openTaskModal()">+ New Task</button>
+  </div>
+  <div id="task-list"><p style="color:var(--dim);font-size:12px">No scheduled tasks</p></div>
+</div>
+
+<!-- MONITOR -->
+<div class="panel" id="panel-monitor" style="display:none">
+  <div class="grid-2" style="gap:12px">
+    <div class="card">
+      <div class="card-header">RAM Usage (last 5 min)</div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="ram-chart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">CPU Load (last 5 min)</div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="cpu-chart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-header">System Stats</div>
+    <div class="card-body">
+      <div class="grid-3" style="gap:10px">
+        <div class="stat-card"><div class="stat-label">Total RAM</div><div class="stat-value" id="mon-total-ram" style="font-size:15px">—</div></div>
+        <div class="stat-card"><div class="stat-label">Used RAM</div><div class="stat-value" id="mon-used-ram" style="font-size:15px">—</div></div>
+        <div class="stat-card"><div class="stat-label">CPU 1m avg</div><div class="stat-value" id="mon-cpu" style="font-size:15px">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="panel" id="panel-settings" style="display:none">
+  <div class="grid-2" style="gap:14px">
+    <div class="card">
+      <div class="card-header">Authentication</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Enable Password</label>
+          <label class="toggle"><input type="checkbox" id="cfg-auth-enabled" onchange="toggleAuthPw()"/><span class="toggle-slider"></span></label>
+        </div>
+        <div id="auth-pw-section">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input id="cfg-auth-pw" class="form-input" type="password" placeholder="Set a password"/>
+          </div>
+        </div>
+        <button class="btn btn-green" onclick="saveSettings()">Save Auth</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Discord Notifications</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Enable</label>
+          <label class="toggle"><input type="checkbox" id="cfg-discord-enabled"/><span class="toggle-slider"></span></label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Webhook URL</label>
+          <input id="cfg-discord-webhook" class="form-input" type="text" placeholder="https://discord.com/api/webhooks/…"/>
+          <span class="form-hint">Get from Discord channel → Integrations → Webhooks</span>
+        </div>
+        <button class="btn btn-green" onclick="saveSettings()">Save Discord</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- SERVER MODAL -->
+<div id="server-modal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3 id="server-modal-title">Add Server</h3>
+    <div class="form-group"><label class="form-label">Name</label><input id="sm-name" class="form-input" type="text" placeholder="My Server"/></div>
+    <div class="form-group"><label class="form-label">Server Path</label><input id="sm-path" class="form-input" type="text" placeholder="C:\minecraft-server"/></div>
+    <div class="form-group"><label class="form-label">JAR File</label><input id="sm-jar" class="form-input" type="text" placeholder="server.jar"/></div>
+    <div class="form-group"><label class="form-label">Java Path</label><input id="sm-java" class="form-input" type="text" placeholder="java"/></div>
+    <div class="form-group"><label class="form-label">JVM Args</label><input id="sm-jvm" class="form-input" type="text" placeholder="-Xmx2G -Xms1G"/></div>
+    <div class="modal-btns">
+      <button class="btn btn-dim" onclick="closeModal('server-modal')">Cancel</button>
+      <button class="btn btn-green" onclick="saveServer()">Save</button>
+      <button class="btn btn-red" id="sm-delete-btn" onclick="deleteServer()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div id="task-modal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3>Scheduled Task</h3>
+    <input type="hidden" id="tm-id"/>
+    <div class="form-group"><label class="form-label">Name</label><input id="tm-name" class="form-input" type="text" placeholder="Task name"/></div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select id="tm-type" class="form-select" onchange="updateTaskModal()">
+        <option value="command">Command</option>
+        <option value="backup">Backup</option>
+        <option value="restart">Restart</option>
+      </select>
+    </div>
+    <div id="tm-command-row" class="form-group"><label class="form-label">Command</label><input id="tm-command" class="form-input" type="text" placeholder="say Hello!"/></div>
+    <div id="tm-warn-row" class="form-group" style="display:none"><label class="form-label">Warn minutes before restart</label><input id="tm-warn" class="form-input" type="number" value="1" min="0"/></div>
+    <div class="form-group"><label class="form-label">Interval (minutes)</label><input id="tm-interval" class="form-input" type="number" value="60" min="1"/></div>
+    <div class="form-group"><label class="form-label">Enabled</label><label class="toggle"><input type="checkbox" id="tm-enabled" checked/><span class="toggle-slider"></span></label></div>
+    <div class="modal-btns">
+      <button class="btn btn-dim" onclick="closeModal('task-modal')">Cancel</button>
+      <button class="btn btn-red" id="tm-delete-btn" onclick="deleteTask()" style="display:none">Delete</button>
+      <button class="btn btn-green" onclick="saveTask()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER ACTION MODAL -->
+<div id="player-modal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3 id="pm-title">Player Action</h3>
+    <input type="hidden" id="pm-action"/>
+    <input type="hidden" id="pm-player"/>
+    <div class="form-group"><label class="form-label">Reason / Target</label><input id="pm-reason" class="form-input" type="text" placeholder="Optional reason…"/></div>
+    <div id="pm-mode-row" class="form-group" style="display:none">
+      <label class="form-label">Gamemode</label>
+      <select id="pm-mode" class="form-select"><option value="survival">Survival</option><option value="creative">Creative</option><option value="adventure">Adventure</option><option value="spectator">Spectator</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-dim" onclick="closeModal('player-modal')">Cancel</button>
+      <button class="btn btn-green" onclick="confirmPlayerAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+let authToken = localStorage.getItem('mc-token') || '';
+async function checkAuth() {
+  const r = await fetch('/api/auth/check').then(r=>r.json());
+  if (!r.enabled) return init();
+  if (authToken) {
+    const t = await fetch('/api/status',{headers:{'x-auth-token':authToken}});
+    if (t.ok) return init();
+  }
+  document.getElementById('login-screen').style.display = 'flex';
+}
+async function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  const r  = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})}).then(r=>r.json());
+  if (r.ok) { authToken = r.token; localStorage.setItem('mc-token',authToken); document.getElementById('login-screen').style.display='none'; init(); }
+  else { document.getElementById('login-err').style.display='block'; }
+}
+function apiHeaders() { return { 'Content-Type':'application/json','x-auth-token':authToken }; }
+function api(url,opts={}) {
+  opts.headers = { ...apiHeaders(), ...(opts.headers||{}) };
+  return fetch(url,opts).then(r=>r.json());
+}
+
+// ─── Socket ───────────────────────────────────────────────────────────────────
+const socket = io();
+let serverStatus = 'offline';
+let cmdHistory = [], cmdHistIdx = -1;
+let currentFilePath = null, fileUnsaved = false, currentDir = '';
+let editingServerId = null, editingTaskId = null;
+let ramChart, cpuChart;
+let perfData = { labels:[], ram:[], cpu:[] };
+
+socket.on('status:change', s => setStatus(s));
+socket.on('console:history', lines => { lines.forEach(l=>appendLog(l,false)); scrollConsole(); });
+socket.on('console:line', entry => appendLog(entry, true));
+socket.on('stats', s => updateStats(s));
+socket.on('players:update', players => updatePlayers(players));
+socket.on('backup:done', () => { toast('Backup complete!'); loadBackups(); });
+
+// ─── Status ───────────────────────────────────────────────────────────────────
+function setStatus(s) {
+  serverStatus = s;
+  const on = s === 'online';
+  document.getElementById('status-dot').className = 'status-dot' + (on?' online':'');
+  document.getElementById('status-label').textContent = on ? 'Online' : 'Offline';
+  document.getElementById('dash-status').textContent  = on ? 'ONLINE' : 'OFFLINE';
+  document.getElementById('dash-status').className = 'stat-value '+(on?'green':'red');
+  document.getElementById('btn-start').disabled   = on;
+  document.getElementById('btn-stop').disabled    = !on;
+  document.getElementById('btn-restart').disabled = !on;
+  if (!on) updatePlayers({});
+  refreshServerInfo();
+}
+
+function updateStats(s) {
+  const used = s.totalMem - s.freeMem;
+  const pct  = Math.round(used/s.totalMem*100);
+  document.getElementById('dash-ram').textContent = fmtBytes(used)+' / '+fmtBytes(s.totalMem);
+  document.getElementById('ram-bar').style.width  = pct+'%';
+  document.getElementById('dash-cpu').textContent = (s.cpu||s.cpuLoad||0).toFixed(1) + '%';
+  // Monitor
+  document.getElementById('mon-total-ram').textContent = fmtBytes(s.totalMem);
+  document.getElementById('mon-used-ram').textContent  = fmtBytes(used);
+  document.getElementById('mon-cpu').textContent       = (s.cpu||0).toFixed(1) + '%';
+  updateCharts(s);
+}
+
+// ─── Server control ───────────────────────────────────────────────────────────
+async function startServer()   { const r=await api('/api/start',{method:'POST'}); if(!r.ok) toast(r.msg,true); }
+async function stopServer()    { const r=await api('/api/stop',{method:'POST'});  if(!r.ok) toast(r.msg,true); }
+async function restartServer() { await api('/api/restart',{method:'POST'}); }
+
+// ─── Multi-server ─────────────────────────────────────────────────────────────
+let servers = [], activeServerId = null;
+async function loadServers() {
+  servers = await api('/api/servers');
+  const status = await api('/api/status');
+  activeServerId = status.activeServer;
+  const sel = document.getElementById('server-select');
+  sel.innerHTML = servers.length ? servers.map(s=>`<option value="${s.id}" ${s.id===activeServerId?'selected':''}>${s.name}</option>`).join('') : '<option value="">No servers</option>';
+}
+async function switchServer(id) {
+  if (id === activeServerId) return;
+  const r = await api(`/api/servers/${id}/activate`,{method:'POST'});
+  if (r.ok) { activeServerId=id; toast('Server switched'); refreshServerInfo(); }
+  else toast(r.error||'Stop server first',true);
+}
+function openServerModal(srv=null) {
+  editingServerId = srv?.id || null;
+  document.getElementById('server-modal-title').textContent = srv ? 'Edit Server' : 'Add Server';
+  document.getElementById('sm-name').value = srv?.name  || '';
+  document.getElementById('sm-path').value = srv?.path  || '';
+  document.getElementById('sm-jar').value  = srv?.jar   || 'server.jar';
+  document.getElementById('sm-java').value = srv?.java  || 'java';
+  document.getElementById('sm-jvm').value  = srv?.jvmArgs || '-Xmx2G -Xms1G';
+  document.getElementById('sm-delete-btn').style.display = srv ? 'inline-flex' : 'none';
+  document.getElementById('server-modal').style.display  = 'flex';
+}
+async function saveServer() {
+  const body = { name:document.getElementById('sm-name').value, path:document.getElementById('sm-path').value, jar:document.getElementById('sm-jar').value, java:document.getElementById('sm-java').value, jvmArgs:document.getElementById('sm-jvm').value };
+  if (editingServerId) await api(`/api/servers/${editingServerId}`,{method:'PUT',body:JSON.stringify(body)});
+  else await api('/api/servers',{method:'POST',body:JSON.stringify(body)});
+  closeModal('server-modal'); loadServers(); toast('Server saved');
+}
+async function deleteServer() {
+  if (!confirm('Delete this server config?')) return;
+  await api(`/api/servers/${editingServerId}`,{method:'DELETE'});
+  closeModal('server-modal'); loadServers(); toast('Server deleted');
+}
+
+// ─── Console ──────────────────────────────────────────────────────────────────
+function stripAnsiClient(line) {
+  if (!line) return '';
+  return line.replace(/\x1B\[[0-9;]*[A-Za-z]/g,'').replace(/\x1B[@-_][0-?]*[ -/]*[@-~]/g,'');
+}
+function colorize(line) {
+  if (!line) return '';
+  line = stripAnsiClient(line);
+  let s = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if (/\[WARN\]|WARNING/i.test(s))   return `<span class="warn">${s}</span>`;
+  if (/joined the game/i.test(s))    return `<span class="joined">${s}</span>`;
+  if (/left the game/i.test(s))      return `<span class="left-t">${s}</span>`;
+  if (/\[INFO\]/i.test(s))           return `<span class="info-t">${s}</span>`;
+  return s;
+}
+function appendLog(entry, live) {
+  const ts   = new Date(entry.ts).toLocaleTimeString();
+  const html = `<span class="ts">${ts}</span>${colorize(entry.line)}`;
+  const makeEl = () => { const d=document.createElement('div'); d.className=`log-line ${entry.type||''}`; d.innerHTML=html; d.dataset.type=entry.type||'log'; d.dataset.line=(entry.line||'').toLowerCase(); return d; };
+  const out = document.getElementById('console-output'); out.appendChild(makeEl());
+  const mini = document.getElementById('mini-console'); mini.appendChild(makeEl());
+  while (mini.children.length > 25) mini.removeChild(mini.firstChild);
+  mini.scrollTop = mini.scrollHeight;
+  if (live) scrollConsole();
+}
+function scrollConsole() { if(document.getElementById('auto-scroll').checked){ const el=document.getElementById('console-output'); el.scrollTop=el.scrollHeight; } }
+function filterLogs() {
+  const filter = document.getElementById('log-filter').value;
+  const search = (document.getElementById('console-search').value||'').toLowerCase();
+  document.querySelectorAll('#console-output .log-line').forEach(el => {
+    const typeOk   = filter==='all' || el.dataset.type===filter || (filter==='warn'&&el.dataset.line.includes('warn'));
+    const searchOk = !search || el.dataset.line.includes(search);
+    el.style.display = typeOk&&searchOk ? '' : 'none';
+  });
+}
+function clearConsole() { document.getElementById('console-output').innerHTML=''; }
+function saveConsoleLog() {
+  const lines = [...document.querySelectorAll('#console-output .log-line')].map(el=>el.textContent).join('\n');
+  const blob  = new Blob([lines],{type:'text/plain'});
+  const a     = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`console-${Date.now()}.log`; a.click();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('cmd-input').addEventListener('keydown', e => {
+    if (e.key==='Enter')     { sendCommand(); return; }
+    if (e.key==='ArrowUp')   { if(cmdHistIdx<cmdHistory.length-1)cmdHistIdx++; e.target.value=cmdHistory[cmdHistIdx]||''; e.preventDefault(); }
+    if (e.key==='ArrowDown') { if(cmdHistIdx>-1)cmdHistIdx--; e.target.value=cmdHistIdx>=0?cmdHistory[cmdHistIdx]:''; e.preventDefault(); }
+  });
+});
+function sendCommand() {
+  const inp=document.getElementById('cmd-input'), cmd=inp.value.trim();
+  if (!cmd) return;
+  cmdHistory.unshift(cmd); cmdHistIdx=-1;
+  api('/api/command',{method:'POST',body:JSON.stringify({command:cmd})});
+  inp.value='';
+}
+function dashCmd() {
+  const inp=document.getElementById('dash-cmd'), cmd=inp.value.trim(); if(!cmd) return;
+  api('/api/command',{method:'POST',body:JSON.stringify({command:cmd})});
+  inp.value='';
+}
+
+// ─── Players ──────────────────────────────────────────────────────────────────
+function updatePlayers(players) {
+  const arr = typeof players === 'object' && !Array.isArray(players) ? Object.values(players) : players;
+  const count = arr.length;
+  document.getElementById('dash-playercount').textContent = count;
+  document.getElementById('online-count').textContent = count;
+  // Dashboard chips
+  const dp = document.getElementById('dash-players');
+  dp.innerHTML = count===0 ? (serverStatus==='online'?'<span style="color:var(--muted)">No players online</span>':'<span style="color:var(--muted)">Server offline</span>') : arr.map(p=>`<span class="player-chip">${p.name}</span>`).join('');
+  // Players panel
+  const pl = document.getElementById('player-list');
+  if (count===0) { pl.innerHTML='<p style="color:var(--dim);font-size:12px">No players online</p>'; return; }
+  pl.innerHTML = arr.map(p => {
+    const since = p.joined ? 'Online '+timeSince(p.joined) : 'Online';
+    return `<div class="player-card">
+      <div class="player-avatar">👤</div>
+      <div style="flex:1"><div class="player-name">${p.name}</div><div class="player-time">${since}</div></div>
+      <div class="player-actions">
+        <button class="btn btn-yellow btn-sm" onclick="playerAction('kick','${p.name}')">Kick</button>
+        <button class="btn btn-red btn-sm" onclick="playerAction('ban','${p.name}')">Ban</button>
+        <button class="btn btn-purple btn-sm" onclick="playerAction('op','${p.name}')">Op</button>
+        <button class="btn btn-blue btn-sm" onclick="playerAction('gamemode','${p.name}')">Mode</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function timeSince(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s<60) return s+'s'; if (s<3600) return Math.floor(s/60)+'m'; return Math.floor(s/3600)+'h';
+}
+async function loadWhitelist() {
+  const data = await api('/api/whitelist');
+  const el   = document.getElementById('whitelist-list');
+  if (!data.length) { el.innerHTML='<p style="color:var(--dim);font-size:11px">Whitelist is empty</p>'; return; }
+  el.innerHTML = data.map(p=>`<div class="wl-item"><span style="flex:1">${p.name||p}</span><button class="btn btn-red btn-sm" onclick="wlRemove('${p.name||p}')">Remove</button></div>`).join('');
+}
+async function loadBanlist() {
+  const data = await api('/api/banlist');
+  const el   = document.getElementById('banlist-list');
+  if (!data.length) { el.innerHTML='<p style="color:var(--dim);font-size:11px">No bans</p>'; return; }
+  el.innerHTML = data.map(p=>`<div class="ban-item"><div style="flex:1"><div style="font-size:11px">${p.name}</div><div style="font-size:9px;color:var(--dim)">${p.reason||'Banned'}</div></div><button class="btn btn-green btn-sm" onclick="pardon('${p.name}')">Pardon</button></div>`).join('');
+}
+async function wlAdd()    { const n=document.getElementById('wl-add-name').value.trim(); if(!n) return; await api('/api/whitelist/add',{method:'POST',body:JSON.stringify({name:n})}); document.getElementById('wl-add-name').value=''; toast(`${n} added to whitelist`); setTimeout(loadWhitelist,1000); }
+async function wlRemove(n){ await api('/api/whitelist/remove',{method:'POST',body:JSON.stringify({name:n})}); toast(`${n} removed`); setTimeout(loadWhitelist,1000); }
+async function pardon(n)  { await api('/api/players/pardon',{method:'POST',body:JSON.stringify({name:n})}); toast(`${n} pardoned`); setTimeout(loadBanlist,1000); }
+
+let pmCallback = null;
+function playerAction(action, name) {
+  document.getElementById('pm-action').value  = action;
+  document.getElementById('pm-player').value  = name;
+  document.getElementById('pm-reason').value  = '';
+  document.getElementById('pm-title').textContent = `${action.charAt(0).toUpperCase()+action.slice(1)}: ${name}`;
+  document.getElementById('pm-mode-row').style.display = action==='gamemode'?'flex':'none';
+  document.getElementById('player-modal').style.display='flex';
+}
+async function confirmPlayerAction() {
+  const action = document.getElementById('pm-action').value;
+  const name   = document.getElementById('pm-player').value;
+  const reason = document.getElementById('pm-reason').value;
+  const mode   = document.getElementById('pm-mode').value;
+  const urls   = { kick:'/api/players/kick', ban:'/api/players/ban', op:'/api/players/op', deop:'/api/players/deop', gamemode:'/api/players/gamemode' };
+  const body   = action==='gamemode' ? {name,mode} : {name,reason};
+  await api(urls[action],{method:'POST',body:JSON.stringify(body)});
+  closeModal('player-modal'); toast(`${action} sent for ${name}`);
+}
+
+// ─── Server info ──────────────────────────────────────────────────────────────
+async function refreshServerInfo() {
+  try {
+    const info = await api('/api/serverinfo');
+    if (info.error) return;
+    const rows = [
+      ['MOTD', info.motd||'—'],['Port', info.port||'—'],['Gamemode', cap(info.gamemode||'—')],
+      ['Difficulty', cap(info.difficulty||'—')],['Max Players', info.maxPlayers||'—'],
+      ['World', info.worldName||'—'],['View Distance', info.viewDistance ? info.viewDistance+' chunks':'—'],
+      ['PvP', info.pvp?'✔ On':'✘ Off'],['Online Mode', info.onlineMode?'✔ Yes':'✘ No'],['Whitelist', info.whitelist?'✔ On':'✘ Off'],
+    ];
+    document.getElementById('props-tbody').innerHTML = rows.map(([k,v])=>`<tr class="props-row"><td>${k}</td><td>${v}</td></tr>`).join('');
+    if (info.diskUsage!==undefined) document.getElementById('dash-disk').textContent = fmtBytes(info.diskUsage);
+    if (info.pluginCount!==undefined) document.getElementById('dash-plugins').textContent = info.pluginCount;
+  } catch {}
+}
+function cap(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
+// ─── Files ────────────────────────────────────────────────────────────────────
+function navigateTo(dir) { loadFiles(dir); }
+async function loadFiles(dir='') {
+  currentDir = dir;
+  const data = await api('/api/files?path='+encodeURIComponent(dir));
+  if (data.error) return toast(data.error,true);
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = '';
+  const parts = dir ? dir.split(/[\\/]/) : [];
+  const rootEl = document.createElement('span'); rootEl.textContent='root'; rootEl.onclick=()=>loadFiles(''); bc.appendChild(rootEl);
+  let cum='';
+  parts.forEach(p => { cum = cum ? cum+'\\'+p : p; const sep=document.createElement('span'); sep.className='bc-sep'; sep.textContent=' / '; const el=document.createElement('span'); el.textContent=p; const cp=cum; el.onclick=()=>loadFiles(cp); bc.appendChild(sep); bc.appendChild(el); });
+  const tree = document.getElementById('file-tree'); tree.innerHTML='';
+  if (dir) { const up=document.createElement('div'); up.className='file-item'; up.innerHTML='<span class="icon">📁</span><span class="fname">..</span>'; const parent=dir.includes('\\')?dir.split('\\').slice(0,-1).join('\\'):dir.includes('/')?dir.split('/').slice(0,-1).join('/'):''; up.onclick=()=>loadFiles(parent); tree.appendChild(up); }
+  data.items.forEach(item => {
+    const el=document.createElement('div'); el.className='file-item';
+    el.innerHTML=`<span class="icon">${item.isDir?'📁':getIcon(item.name)}</span><span class="fname">${item.name}</span><span class="fsize">${item.isDir?'':fmtBytes(item.size)}</span>`;
+    const itemPath=dir?dir+'\\'+item.name:item.name;
+    el.onclick=item.isDir?()=>loadFiles(itemPath):()=>openFile(itemPath,item.name,el);
+    tree.appendChild(el);
+  });
+}
+function getIcon(n) { const e=n.split('.').pop().toLowerCase(); return {jar:'📦',json:'📋',yml:'⚙️',yaml:'⚙️',properties:'⚙️',txt:'📄',log:'📜',sh:'💻',bat:'💻',zip:'🗜️',gz:'🗜️',md:'📝'}[e]||'📄'; }
+async function openFile(filePath, name, el) {
+  document.querySelectorAll('.file-item').forEach(e=>e.classList.remove('selected')); el.classList.add('selected');
+  const data = await api('/api/file?path='+encodeURIComponent(filePath));
+  if (data.error) return toast(data.error,true);
+  currentFilePath=filePath; fileUnsaved=false;
+  document.getElementById('editor-placeholder').style.display='none';
+  document.getElementById('editor-toolbar').style.display='flex';
+  const editor=document.getElementById('file-editor'); editor.style.display='block'; editor.value=data.content;
+  document.getElementById('editor-filename').textContent=name; document.getElementById('editor-filename').className='editor-filename';
+}
+async function saveFile() {
+  if (!currentFilePath) return;
+  const r=await api('/api/file',{method:'POST',body:JSON.stringify({path:currentFilePath,content:document.getElementById('file-editor').value})});
+  if (r.ok) { fileUnsaved=false; document.getElementById('editor-filename').className='editor-filename'; toast('Saved!'); }
+  else toast(r.error,true);
+}
+function closeEditor() {
+  if (fileUnsaved&&!confirm('Discard unsaved changes?')) return;
+  currentFilePath=null; fileUnsaved=false;
+  document.getElementById('editor-placeholder').style.display='flex'; document.getElementById('editor-toolbar').style.display='none'; document.getElementById('file-editor').style.display='none';
+  document.querySelectorAll('.file-item').forEach(e=>e.classList.remove('selected'));
+}
+function markUnsaved() { fileUnsaved=true; document.getElementById('editor-filename').className='editor-filename unsaved'; }
+function editorKeydown(e) {
+  if (e.ctrlKey&&e.key==='s') { e.preventDefault(); saveFile(); }
+  if (e.key==='Tab') { e.preventDefault(); const el=e.target,s=el.selectionStart,en=el.selectionEnd; el.value=el.value.substring(0,s)+'  '+el.value.substring(en); el.selectionStart=el.selectionEnd=s+2; }
+}
+
+// ─── Plugins ──────────────────────────────────────────────────────────────────
+async function loadPlugins() {
+  const data = await api('/api/plugins');
+  document.getElementById('plugin-count').textContent = Array.isArray(data) ? data.filter(p=>p.enabled).length : 0;
+  const grid = document.getElementById('plugin-grid'); grid.innerHTML='';
+  if (!Array.isArray(data)||!data.length) { grid.innerHTML='<p style="color:var(--dim);font-size:12px;padding:10px 0">No plugins found in /plugins directory</p>'; return; }
+  data.forEach(p => {
+    const el=document.createElement('div'); el.className='plugin-item'+(p.enabled?'':' disabled');
+    el.innerHTML=`<span style="font-size:20px">🔌</span>
+      <div class="plugin-meta">
+        <div class="plugin-name">${p.pluginName||p.name}</div>
+        <div class="plugin-sub">${[p.version?'v'+p.version:'',p.author||''].filter(Boolean).join(' · ')} <span style="color:var(--muted)">${fmtBytes(p.size)}</span></div>
+        ${p.description?`<div class="plugin-sub" style="color:var(--muted);margin-top:2px">${p.description.substring(0,80)}</div>`:''}
+      </div>
+      <label class="toggle"><input type="checkbox" ${p.enabled?'checked':''} onchange="togglePlugin('${p.file}',${p.enabled},this)"/><span class="toggle-slider"></span></label>
+      <button class="btn btn-red btn-sm" onclick="deletePlugin('${p.file}')">🗑</button>`;
+    grid.appendChild(el);
+  });
+}
+async function togglePlugin(file,enabled,cb) {
+  const r=await api('/api/plugins/toggle',{method:'POST',body:JSON.stringify({file,enabled})});
+  if (r.ok) { toast(enabled?'Plugin disabled':'Plugin enabled'); loadPlugins(); } else { toast(r.error,true); cb.checked=enabled; }
+}
+async function deletePlugin(file) {
+  if (!confirm(`Delete ${file}?`)) return;
+  const r=await api('/api/plugins?file='+encodeURIComponent(file),{method:'DELETE'});
+  if (r.ok) { toast('Plugin deleted'); loadPlugins(); } else toast(r.error,true);
+}
+async function uploadPlugin(input) {
+  const file=input.files[0]; if(!file) return;
+  const fd=new FormData(); fd.append('plugin',file);
+  const r=await fetch('/api/plugins/upload',{method:'POST',headers:{'x-auth-token':authToken},body:fd}).then(r=>r.json());
+  if (r.ok) { toast('Uploaded: '+r.name); loadPlugins(); } else toast(r.error,true);
+  input.value='';
+}
+const dropZone=document.getElementById('plugin-drop');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(!f||!f.name.endsWith('.jar'))return toast('Only .jar files',true);uploadPlugin({files:[f]});});
+
+// ─── Backups ──────────────────────────────────────────────────────────────────
+async function loadBackups() {
+  const data = await api('/api/backups');
+  const el   = document.getElementById('backup-list'); el.innerHTML='';
+  if (!data.length) { el.innerHTML='<p style="color:var(--dim);font-size:12px">No backups found</p>'; return; }
+  data.forEach(b => {
+    const div=document.createElement('div'); div.className='backup-item';
+    div.innerHTML=`<span style="font-size:18px">📦</span>
+      <span class="backup-name" title="${b.name}">${b.name}</span>
+      <span class="backup-meta">${fmtBytes(b.size)} · ${new Date(b.mtime).toLocaleString()}</span>
+      <a href="/api/backups/${encodeURIComponent(b.name)}/download?token=${authToken}" class="btn btn-blue btn-sm" download>⬇ Download</a>
+      <button class="btn btn-red btn-sm" onclick="deleteBackup('${b.name}')">🗑</button>`;
+    el.appendChild(div);
+  });
+}
+async function createBackup() {
+  const btn=document.getElementById('backup-btn'); btn.disabled=true; btn.textContent='Working…';
+  toast('Starting backup…','warn');
+  const r=await api('/api/backups',{method:'POST',body:JSON.stringify({label:'manual'})});
+  btn.disabled=false; btn.textContent='📦 Backup Now';
+  if (r.ok) { toast('Backup complete!'); loadBackups(); } else toast(r.error,true);
+}
+async function deleteBackup(name) {
+  if (!confirm('Delete this backup?')) return;
+  const r=await api(`/api/backups/${encodeURIComponent(name)}`,{method:'DELETE'});
+  if (r.ok) { toast('Deleted'); loadBackups(); } else toast(r.error,true);
+}
+async function saveBackupDir() {
+  const dir=document.getElementById('backup-dir').value;
+  await api('/api/config',{method:'POST',body:JSON.stringify({backupDir:dir})});
+  toast('Backup path saved');
+}
+
+// ─── Scheduler ────────────────────────────────────────────────────────────────
+async function loadScheduler() {
+  const tasks=await api('/api/scheduler');
+  const el=document.getElementById('task-list'); el.innerHTML='';
+  if (!tasks.length) { el.innerHTML='<p style="color:var(--dim);font-size:12px">No scheduled tasks</p>'; return; }
+  tasks.forEach(t => {
+    const div=document.createElement('div'); div.className='task-item'+(t.enabled?'':' disabled');
+    const typeIcon={command:'⌨',backup:'📦',restart:'↺'}[t.type]||'⏰';
+    const meta = t.type==='command'?t.command : t.type==='restart'?`Restart (warn ${t.warnMinutes}m)`:'World backup';
+    div.innerHTML=`<span style="font-size:18px">${typeIcon}</span>
+      <div style="flex:1"><div class="task-name">${t.name}</div><div class="task-meta">${meta} · every ${t.intervalMinutes}m</div></div>
+      <span class="badge ${t.enabled?'badge-green':'badge-red'}">${t.enabled?'ON':'OFF'}</span>
+      <button class="btn btn-blue btn-sm" onclick="runTaskNow('${t.id}')">▶ Run</button>
+      <button class="btn btn-dim btn-sm" onclick="openTaskModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">Edit</button>`;
+    el.appendChild(div);
+  });
+}
+function openTaskModal(task=null) {
+  editingTaskId=task?.id||null;
+  document.getElementById('tm-id').value      = task?.id||'';
+  document.getElementById('tm-name').value    = task?.name||'';
+  document.getElementById('tm-type').value    = task?.type||'command';
+  document.getElementById('tm-command').value = task?.command||'';
+  document.getElementById('tm-interval').value= task?.intervalMinutes||60;
+  document.getElementById('tm-warn').value    = task?.warnMinutes||1;
+  document.getElementById('tm-enabled').checked=task?.enabled!==false;
+  document.getElementById('tm-delete-btn').style.display=task?'inline-flex':'none';
+  updateTaskModal();
+  document.getElementById('task-modal').style.display='flex';
+}
+function updateTaskModal() {
+  const type=document.getElementById('tm-type').value;
+  document.getElementById('tm-command-row').style.display=type==='command'?'flex':'none';
+  document.getElementById('tm-warn-row').style.display=type==='restart'?'flex':'none';
+}
+async function saveTask() {
+  const body={name:document.getElementById('tm-name').value,type:document.getElementById('tm-type').value,command:document.getElementById('tm-command').value,intervalMinutes:+document.getElementById('tm-interval').value,warnMinutes:+document.getElementById('tm-warn').value,enabled:document.getElementById('tm-enabled').checked};
+  if (editingTaskId) await api(`/api/scheduler/${editingTaskId}`,{method:'PUT',body:JSON.stringify(body)});
+  else await api('/api/scheduler',{method:'POST',body:JSON.stringify(body)});
+  closeModal('task-modal'); loadScheduler(); toast('Task saved');
+}
+async function deleteTask() {
+  if (!confirm('Delete task?')) return;
+  await api(`/api/scheduler/${editingTaskId}`,{method:'DELETE'});
+  closeModal('task-modal'); loadScheduler();
+}
+async function runTaskNow(id) { await api(`/api/scheduler/${id}/run`,{method:'POST'}); toast('Task triggered'); }
+
+// ─── Charts ───────────────────────────────────────────────────────────────────
+function initCharts() {
+  const opts = (label,color) => ({
+    type:'line', data:{ labels:[], datasets:[{label,data:[],borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:0,tension:.4,fill:true}] },
+    options:{ responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:true,grid:{color:'#1a2230'},ticks:{color:'#64748b',font:{family:'JetBrains Mono',size:9}}}}}
+  });
+  ramChart = new Chart(document.getElementById('ram-chart').getContext('2d'), opts('RAM GB','#4ade80'));
+  cpuChart = new Chart(document.getElementById('cpu-chart').getContext('2d'), opts('CPU','#38bdf8'));
+}
+function updateCharts(s) {
+  const used = (s.totalMem-s.freeMem)/1073741824;
+  const time = new Date().toLocaleTimeString();
+  [ramChart,cpuChart].forEach((chart,i) => {
+    if (!chart) return;
+    chart.data.labels.push(time);
+    chart.data.datasets[0].data.push(i===0?+used.toFixed(2):+(s.cpu||0).toFixed(2));
+    if (chart.data.labels.length>60) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+    chart.update('none');
+  });
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  const cfg=await api('/api/config');
+  document.getElementById('cfg-auth-enabled').checked = cfg.auth?.enabled||false;
+  document.getElementById('cfg-auth-pw').value = cfg.auth?.password||'';
+  document.getElementById('cfg-discord-enabled').checked = cfg.discord?.enabled||false;
+  document.getElementById('cfg-discord-webhook').value = cfg.discord?.webhook||'';
+  document.getElementById('backup-dir').value = cfg.backupDir||'';
+  toggleAuthPw();
+}
+function toggleAuthPw() {
+  document.getElementById('auth-pw-section').style.display=document.getElementById('cfg-auth-enabled').checked?'block':'none';
+}
+async function saveSettings() {
+  const body={auth:{enabled:document.getElementById('cfg-auth-enabled').checked,password:document.getElementById('cfg-auth-pw').value},discord:{enabled:document.getElementById('cfg-discord-enabled').checked,webhook:document.getElementById('cfg-discord-webhook').value}};
+  const r=await api('/api/config',{method:'POST',body:JSON.stringify(body)});
+  if (r.ok) toast('Settings saved');
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const panel=document.getElementById('panel-'+name);
+  panel.style.display=name==='console'?'flex':'block';
+  if (el) el.classList.add('active');
+  if (name==='files')     loadFiles(currentDir);
+  if (name==='plugins')   loadPlugins();
+  if (name==='players')   { loadWhitelist(); loadBanlist(); }
+  if (name==='backups')   loadBackups();
+  if (name==='scheduler') loadScheduler();
+  if (name==='settings')  loadSettings();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmtBytes(b) { if(b>=1073741824)return(b/1073741824).toFixed(1)+' GB'; if(b>=1048576)return(b/1048576).toFixed(1)+' MB'; return(b/1024).toFixed(0)+' KB'; }
+function toast(msg,type='') { const el=document.createElement('div'); el.className='toast'+(type?' '+type:''); el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),3200); }
+function closeModal(id) { document.getElementById(id).style.display='none'; }
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadServers();
+  const s=await api('/api/status'); setStatus(s.status);
+  initCharts();
+  refreshServerInfo();
+  setInterval(refreshServerInfo, 30000);
+  // Load perf history for charts
+  const perf=await api('/api/perf');
+  perf.forEach(p=>updateCharts({totalMem:p.totalRam,freeMem:p.totalRam-p.ram,cpu:p.cpu}));
+}
+checkAuth();
+</script>
+</body>
+</html>
